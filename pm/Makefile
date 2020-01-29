@@ -13,3 +13,6 @@ main.o : main.c
 
 clean:
 	rm -f *.hex *.o
+
+flash:
+	avrdude -p attiny13 -c usbasp -U flash:w:pm.hex
