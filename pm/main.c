@@ -1,16 +1,11 @@
-#include <avr/io.h>
 #include <avr/interrupt.h>
 #include <avr/sleep.h>
-#include <util/delay.h>
 
 
-// Pin 4 for LED
-int led = 4;
+#define ALARM_INTERVAL  450      // 450 * 8 = 3600 seconds
+
 ISR(WDT_vect) {
-    //digitalWrite(led, HIGH);   // turn the LED on (HIGH is the voltage level)
-//    delay(1000);               // wait for a second
-    //digitalWrite(led, LOW);    // turn the LED off by making the voltage LOW
-//    sleep_mode();
+    // do nothing
 }
 
 void idle(void) {
@@ -30,12 +25,31 @@ void idle(void) {
 
 
 void main() {
-    DDRB |= _BV( PB3 );
+    int alarm = 0;       
+    
+    DDRB |= _BV(PB3);    // PB3 - output
+    PORTB &= ~_BV(PB3);
 
-    while( 1 ) {
-        PORTB |=  _BV( PB3 );
-        idle();
-        PORTB &=~ _BV( PB3 );
-        idle();
+    PORTB |= _BV(PB0);   // PB0 - input with PU
+    PORTB |= _BV(PB1);   // PB1 - input with PU
+    PORTB |= _BV(PB2);   // PB2 - input with PU
+    PORTB |= _BV(PB4);   // PB3 - input with PU
+
+    while (1) {
+        idle();  // Sleep for 8 seconds
+
+        if (PINB & _BV(PB2)) {   // IGN is off
+            alarm++;
+        } else {                // IGN is on
+            alarm = 0;
+        }
+
+        // Switch on A9G
+        if (alarm >= ALARM_INTERVAL) {
+            PORTB |= _BV(PB3); 
+            idle();
+            PORTB &= ~_BV(PB3);
+            alarm = 0;
+        }        
     }
 }
