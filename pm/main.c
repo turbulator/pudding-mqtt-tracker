@@ -2,31 +2,33 @@
 #include <avr/sleep.h>
 
 
-#define ALARM_INTERVAL  450      // 450 * 8 = 3600 seconds
+#define WAKE_UP_INTERVAL        3600
 
 ISR(WDT_vect) {
     // do nothing
 }
 
-void idle(void) {
-    WDTCR |= (1 << WDP3) | (0 << WDP2) | (0 << WDP1) | (1 << WDP0); // 8s
+void sleep_1s(void) {
+    WDTCR |= (0 << WDP3) | (1 << WDP2) | (1 << WDP1) | (0 << WDP0); // 1s
     // Enable watchdog timer interrupts
     WDTCR |= (1 << WDTIE);
-    // Use the Power Down sleep mode
+    // Use the power down sleep mode
     set_sleep_mode(SLEEP_MODE_PWR_DOWN);
     cli();
     sleep_enable();
     // Disable brown-out detection while sleeping (20-25µA)
     sleep_bod_disable();
-    sei(); // Enable global interrupts
-    sleep_cpu();                   //go to sleep
+    // Enable global interrupts
+    sei();
+    // Go to sleep
+    sleep_cpu();
     sleep_disable();
 }
 
 
 void main() {
-    int alarm = 0;       
-    
+    int cnt = 3000;      // 10 minutes before wake up
+
     DDRB |= _BV(PB3);    // PB3 - output
     PORTB &= ~_BV(PB3);
 
@@ -36,20 +38,14 @@ void main() {
     PORTB |= _BV(PB4);   // PB3 - input with PU
 
     while (1) {
-        idle();  // Sleep for 8 seconds
+        sleep_1s();  // Sleep for 1 seconds
 
-        if (PINB & _BV(PB2)) {   // IGN is off
-            alarm++;
-        } else {                // IGN is on
-            alarm = 0;
-        }
-
-        // Switch on A9G
-        if (alarm >= ALARM_INTERVAL) {
+        if (cnt++ >= WAKE_UP_INTERVAL) {
+            // Make a pulse to switch on A9G
             PORTB |= _BV(PB3); 
-            idle();
+            sleep_1s();
             PORTB &= ~_BV(PB3);
-            alarm = 0;
+            cnt = 0;
         }        
     }
 }
