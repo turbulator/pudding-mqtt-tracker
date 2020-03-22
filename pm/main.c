@@ -11,9 +11,9 @@ ISR(WDT_vect) {
 
 void sleep_1s(void) {
     // Disable ADC
-    ADCSRA &= ~(1 << ADEN); 
+    ADCSRA &= ~(1 << ADEN);
     // 1s prescaler
-    WDTCR |= (0 << WDP3) | (1 << WDP2) | (1 << WDP1) | (0 << WDP0); 
+    WDTCR |= (0 << WDP3) | (1 << WDP2) | (1 << WDP1) | (0 << WDP0);
     // Enable watchdog timer interrupts
     WDTCR |= (1 << WDTIE);
     // Use the power down sleep mode
@@ -31,15 +31,16 @@ void sleep_1s(void) {
 
 uint16_t read_adc(void)
 {
-   ADCSRA = (1 << ADEN) | (1 << ADPS2) | (1 << ADPS1) | (1 << ADPS0);
-   ADMUX = (1 << REFS0) | 0x01; // Set reference and channel
-   ADCSRA |= (1 << ADSC);       // Start conversion  
-   
-   while(ADCSRA & (1 << ADSC)) {
-	   // Wait for conversion complete
-   }   
-   
-   return ADC;
+    // Enable ADC with prescaler = 128
+    ADCSRA = (1 << ADEN) | (1 << ADPS2) | (1 << ADPS1) | (1 << ADPS0);
+    ADMUX = (1 << REFS0) | (1 << MUX0); // Set internal voltage reference and ADC1
+    ADCSRA |= (1 << ADSC);              // Start conversion
+
+    while(ADCSRA & (1 << ADSC)) {
+        // Wait for conversion complete
+    }   
+
+    return ADC;
 }
 
 void main() {
@@ -50,29 +51,29 @@ void main() {
     DDRB |= _BV(PB1);    // PB1 - Battery voltage divider enable
     // Switch off all digital inputs to reduce the power consumption
     DIDR0 |= (1 << ADC0D) | (1 << ADC1D) | (1 << ADC2D) | (1 << ADC3D); 
-   
+
     while (1) {
         sleep_1s();  // Sleep for 1 seconds
 
         if (cnt++ >= WAKE_UP_INTERVAL) {
 
-			// Check the battery 
+            // Check the battery
             PORTB |= _BV(PB1);
             sleep_1s();
             sleep_1s();
             voltage = read_adc();
-            PORTB &= ~_BV(PB1);        
+            PORTB &= ~_BV(PB1);
 
             if (voltage > BATTERY_LOW_THRESHOLD) {
                 // Make a pulse to switch on A9G
-                PORTB |= _BV(PB0); 
+                PORTB |= _BV(PB0);
                 sleep_1s();
                 sleep_1s();
                 sleep_1s();
                 sleep_1s();
                 PORTB &= ~_BV(PB0);
-		    }
+            }
             cnt = 0;
-        }        
+        }
     }
 }
