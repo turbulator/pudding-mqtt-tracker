@@ -1,19 +1,20 @@
 #include <avr/interrupt.h>
 #include <avr/sleep.h>
+#include <avr/wdt.h>
 
 
-#define WAKE_UP_INTERVAL        3600
+#define WAKE_UP_INTERVAL        450
 #define BATTERY_LOW_THRESHOLD   744  // ~3,2V
 
 ISR(WDT_vect) {
     // do nothing
 }
 
-void sleep_1s(void) {
+void sleep(uint8_t prescaler) {
     // Disable ADC
     ADCSRA &= ~(1 << ADEN);
-    // 1s prescaler
-    WDTCR |= (0 << WDP3) | (1 << WDP2) | (1 << WDP1) | (0 << WDP0);
+    // Set WDT prescaler
+    WDTCR |= prescaler;
     // Enable watchdog timer interrupts
     WDTCR |= (1 << WDTIE);
     // Use the power down sleep mode
@@ -44,7 +45,7 @@ uint16_t read_adc(void)
 }
 
 void main() {
-    int cnt = WAKE_UP_INTERVAL - 600;  // 10 minutes before wake up
+    int cnt = WAKE_UP_INTERVAL - 75;  // 10 minutes before wake up
     int voltage;
 
     DDRB |= _BV(PB0);    // PB0 - A9G enable
@@ -53,24 +54,20 @@ void main() {
     DIDR0 |= (1 << ADC0D) | (1 << ADC1D) | (1 << ADC2D) | (1 << ADC3D); 
 
     while (1) {
-        sleep_1s();  // Sleep for 1 seconds
+        sleep(WDTO_8S);  // Sleep for 8 seconds
 
         if (cnt++ >= WAKE_UP_INTERVAL) {
 
             // Check the battery
             PORTB |= _BV(PB1);
-            sleep_1s();
-            sleep_1s();
+            sleep(WDTO_30MS);
             voltage = read_adc();
             PORTB &= ~_BV(PB1);
 
             if (voltage > BATTERY_LOW_THRESHOLD) {
                 // Make a pulse to switch on A9G
                 PORTB |= _BV(PB0);
-                sleep_1s();
-                sleep_1s();
-                sleep_1s();
-                sleep_1s();
+                sleep(WDTO_4S);
                 PORTB &= ~_BV(PB0);
             }
             cnt = 0;
