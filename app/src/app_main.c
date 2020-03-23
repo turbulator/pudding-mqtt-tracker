@@ -530,16 +530,20 @@ void app_MqttTask(void *pData)
 {
     MQTT_Event_t* event = NULL;
 
+    WatchDog_Open(WATCHDOG_SECOND_TO_TICK(60));
+
     semMqttStart = OS_CreateSemaphore(0);
     OS_WaitForSemaphore(semMqttStart, OS_WAIT_FOREVER);
     OS_DeleteSemaphore(semMqttStart);
     semMqttStart = NULL;
 
+    WatchDog_KeepAlive();
+
     GpsInit();
     MqttInit();
     AdcInit();
-    
-    WatchDog_Open(WATCHDOG_SECOND_TO_TICK(60));
+
+    WatchDog_KeepAlive();
 
     while(1) {
         if(OS_WaitEvent(mqttTaskHandle, (void**)&event, OS_TIME_OUT_WAIT_FOREVER)) {
