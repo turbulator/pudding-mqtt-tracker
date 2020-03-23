@@ -23,6 +23,7 @@
 #include "api_hal_watchdog.h"
 
 #include "secret.h"
+#include "adc.h"
 
 #define MAIN_TASK_STACK_SIZE    (2048 * 4)
 #define MAIN_TASK_PRIORITY      0
@@ -347,17 +348,12 @@ void MqttPublishBattery(MQTT_Client_t* client)
 {
     Trace(1, "MqttPublishBattery");
 
-    uint16_t value = 0, mV = 0;
-  
-	if(ADC_Read(ADC_CHANNEL_0, &value, &mV)) {
+    snprintf(mqttBuffer, sizeof(mqttBuffer), "%.02f", battery);
 
-		snprintf(mqttBuffer, sizeof(mqttBuffer), "%.02f", ((float)mV) * 3 / 1000);
+    MQTT_Error_t err = MQTT_Publish(client, mqttVoltageTopic, mqttBuffer, strlen(mqttBuffer), 1, 2, 0, OnPublishBattery, NULL);
 
-		MQTT_Error_t err = MQTT_Publish(client, mqttVoltageTopic, mqttBuffer, strlen(mqttBuffer), 1, 2, 0, OnPublishBattery, NULL);
-
-		if(err != MQTT_ERROR_NONE)
-			Trace(1,"MQTT publish location error, error code: %d", err);		
-    }
+    if(err != MQTT_ERROR_NONE)
+        Trace(1,"MQTT publish location error, error code: %d", err);		
 }
 
 void OnPublishLocation(void* arg, MQTT_Error_t err)
@@ -475,20 +471,7 @@ void MqttInit()
 }
 
 
-void AdcInit() {
-    ADC_Config_t config0 = {
-        .channel = ADC_CHANNEL_0,
-        .samplePeriod = ADC_SAMPLE_PERIOD_100MS
-    };
 
-    ADC_Config_t config1 = {
-        .channel = ADC_CHANNEL_1,
-        .samplePeriod = ADC_SAMPLE_PERIOD_100MS
-    };
-
-    ADC_Init(config0);
-    ADC_Init(config1);
-}
 
 /**
  * The proc for handling MQTT events
@@ -541,7 +524,6 @@ void app_MqttTask(void *pData)
 
     GpsInit();
     MqttInit();
-    AdcInit();
 
     WatchDog_KeepAlive();
 
@@ -576,6 +558,9 @@ void app_MainTask(void *pData)
     GPIO_Init(powerLed);
     GPIO_Init(powerSupport);
 
+    // Create ADC task
+    adcTaskHandle = OS_CreateTask(adcTask,
+                                  NULL, NULL, ADC_TASK_STACK_SIZE, ADC_TASK_PRIORITY, 0, 0, ADC_TASK_NAME);
     // Create MQTT task
     mqttTaskHandle = OS_CreateTask(app_MqttTask,
                                     NULL, NULL, MQTT_TASK_STACK_SIZE, MQTT_TASK_PRIORITY, 0, 0, MQTT_TASK_NAME);
