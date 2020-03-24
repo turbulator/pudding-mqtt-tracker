@@ -11,8 +11,6 @@ ISR(WDT_vect) {
 }
 
 void sleep(uint8_t prescaler) {
-    // Disable ADC
-    ADCSRA &= ~(1 << ADEN);
     // Set WDT prescaler
     WDTCR |= prescaler;
     // Enable watchdog timer interrupts
@@ -39,7 +37,10 @@ uint16_t read_adc(void)
 
     while(ADCSRA & (1 << ADSC)) {
         // Wait for conversion complete
-    }   
+    }
+
+    // Disable ADC
+    ADCSRA &= ~(1 << ADEN);
 
     return ADC;
 }
