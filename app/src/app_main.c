@@ -248,6 +248,12 @@ void GpsInit()
     // if(!GPS_SetFixMode(GPS_FIX_MODE_LOW_SPEED))
         // Trace(1,"set fix mode fail");
     
+    if(!GPS_SetSearchMode(true, true, false, false))
+        Trace(1,"set search mode fail");
+        
+    if(!GPS_SetSBASEnable(true))
+        Trace(1,"enable sbas fail");
+
     if(!GPS_SetLpMode(GPS_LP_MODE_SUPPER_LP))
         Trace(1, "set gps lp mode fail");
 
@@ -403,6 +409,20 @@ void MqttPublishLocation(MQTT_Client_t* client)
 
     if(isFixed == 2 || isFixed == 3) { /* We have 2D or 3D fix */ 
 
+            char* isFixedStr;            
+            if(isFixed == 2)
+                isFixedStr = "2D fix";
+            else if(isFixed == 3)
+            {
+                if(gpsInfo->gga.fix_quality == 1)
+                    isFixedStr = "3D fix";
+                else if(gpsInfo->gga.fix_quality == 2)
+                    isFixedStr = "3D/DGPS fix";
+            }
+            else
+                isFixedStr = "no fix";
+
+
         //convert unit ddmm.mmmm to degree(°) 
         int temp = (int)(gpsInfo->rmc.latitude.value / gpsInfo->rmc.latitude.scale / 100);
         double latitude = temp + (double)(gpsInfo->rmc.latitude.value - temp * gpsInfo->rmc.latitude.scale * 100) / gpsInfo->rmc.latitude.scale / 60.0;
@@ -412,7 +432,15 @@ void MqttPublishLocation(MQTT_Client_t* client)
         snprintf(mqttBuffer, sizeof(mqttBuffer), "{\"longitude\": %f,\"latitude\": %f}", 
                                                             longitude, latitude);
 
+
         MQTT_Error_t err = MQTT_Publish(client, mqttLocationTopic, mqttBuffer, strlen(mqttBuffer), 1, 2, 0, OnPublishLocation, NULL);
+
+
+        snprintf(mqttBuffer,sizeof(mqttBuffer),"GPS fix mode:%d, BDS fix mode:%d, fix quality:%d, satellites tracked:%d, gps sates total:%d, is fixed:%s, coordinate:WGS84, Latitude:%f, Longitude:%f, unit:degree, altitude:%f",gpsInfo->gsa[0].fix_type, gpsInfo->gsa[1].fix_type,
+                                                                 gpsInfo->gga.fix_quality,gpsInfo->gga.satellites_tracked, gpsInfo->gsv[0].total_sats, isFixedStr, latitude,longitude,gpsInfo->gga.altitude);
+       
+        err = MQTT_Publish(client, mqttLocationTopic, mqttBuffer, strlen(mqttBuffer), 1, 2, 0, OnPublishLocation, NULL);
+
 
         if(err != MQTT_ERROR_NONE)
             Trace(1,"MQTT publish location error, error code: %d", err);
