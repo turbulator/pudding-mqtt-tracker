@@ -1,18 +1,22 @@
 #include <avr/interrupt.h>
 #include <avr/sleep.h>
-#include <avr/wdt.h>
-
 
 #define WAKE_UP_INTERVAL        450
 #define BATTERY_LOW_THRESHOLD   744  // ~3,2V
+
+#define WDTO_32MS               0x01
+#define WDTO_4S                 0x20
+#define WDTO_8S                 0x21
 
 ISR(WDT_vect) {
     // do nothing
 }
 
-void sleep(uint8_t prescaler) {
-    // Set WDT prescaler
-    WDTCR |= prescaler;
+void sleep(uint8_t timeout) {
+    // Start timed sequence
+    WDTCR |= (1 << WDCE) | (1 << WDE);
+    // Set WDT timeout
+    WDTCR = timeout;
     // Enable watchdog timer interrupts
     WDTCR |= (1 << WDTIE);
     // Use the power down sleep mode
@@ -61,7 +65,7 @@ void main() {
 
             // Check the battery
             PORTB |= _BV(PB1);
-            sleep(WDTO_30MS);
+            sleep(WDTO_32MS);
             voltage = read_adc();
             PORTB &= ~_BV(PB1);
 
