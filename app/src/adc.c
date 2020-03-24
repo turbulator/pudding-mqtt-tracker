@@ -29,7 +29,7 @@ void adcInit() {
     ADC_Init(config0);
     ADC_Init(config1);
 
-    adcSema = OS_CreateSemaphore(0);
+    adcSema = OS_CreateSemaphore(1);
 }
 
 
@@ -78,7 +78,7 @@ float getBattery(void){
     float value;
 
     OS_WaitForSemaphore(adcSema, OS_WAIT_FOREVER);
-        value = battery;
+        value = battery > 10.0 ? battery : 0.0;
     OS_ReleaseSemaphore(adcSema);
 
     return value;
