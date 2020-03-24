@@ -53,7 +53,7 @@ MQTT_Connect_Info_t ci;
 char mqttLocationTopic[64] = "";
 char mqttStateTopic[64] = "";
 char mqttBatteryTopic[64] = "";
-char mqttVoltageTopic[64] = "";
+char mqttLiionTopic[64] = "";
 char mqttBuffer[1024] = "";
 
 
@@ -335,6 +335,7 @@ void MqttPublishState(MQTT_Client_t* client)
             Trace(1,"MQTT publish state error, error code: %d", err);
 }
 
+
 void OnPublishBattery(void* arg, MQTT_Error_t err)
 {
     if(err == MQTT_ERROR_NONE)
@@ -348,13 +349,36 @@ void MqttPublishBattery(MQTT_Client_t* client)
 {
     Trace(1, "MqttPublishBattery");
 
-    snprintf(mqttBuffer, sizeof(mqttBuffer), "%.02f", battery);
+    snprintf(mqttBuffer, sizeof(mqttBuffer), "%.02f", getBattery());
 
-    MQTT_Error_t err = MQTT_Publish(client, mqttVoltageTopic, mqttBuffer, strlen(mqttBuffer), 1, 2, 0, OnPublishBattery, NULL);
+    MQTT_Error_t err = MQTT_Publish(client, mqttBatteryTopic, mqttBuffer, strlen(mqttBuffer), 1, 2, 0, OnPublishBattery, NULL);
 
     if(err != MQTT_ERROR_NONE)
-        Trace(1,"MQTT publish location error, error code: %d", err);		
+        Trace(1,"MQTT publish location error, error code: %d", err);
 }
+
+
+void OnPublishLiion(void* arg, MQTT_Error_t err)
+{
+    if(err == MQTT_ERROR_NONE)
+        Trace(1,"MQTT publish liion success");
+    else
+        Trace(1,"MQTT publish liion error, error code: %d", err);
+}
+
+
+void MqttPublishLiion(MQTT_Client_t* client)
+{
+    Trace(1, "MqttPublishLiion");
+
+    snprintf(mqttBuffer, sizeof(mqttBuffer), "%.02f", getLiion());
+
+    MQTT_Error_t err = MQTT_Publish(client, mqttLiionTopic, mqttBuffer, strlen(mqttBuffer), 1, 2, 0, OnPublishLiion, NULL);
+
+    if(err != MQTT_ERROR_NONE)
+        Trace(1,"MQTT publish location error, error code: %d", err);
+}
+
 
 void OnPublishLocation(void* arg, MQTT_Error_t err)
 {
@@ -400,8 +424,9 @@ void OnTimerPublish(void* param)
     MQTT_Client_t* client = (MQTT_Client_t*)param;
 
     CheckExternalPower();
-    
+
     MqttPublishBattery(client);
+    MqttPublishLiion(client);
 
     MqttPublishLocation(client); 
 
@@ -423,7 +448,7 @@ void MqttInit()
     snprintf(mqttLocationTopic, sizeof(mqttLocationTopic), "location/%s", imei);
     snprintf(mqttStateTopic, sizeof(mqttStateTopic), "vehicle/%s/state", imei);
     snprintf(mqttBatteryTopic, sizeof(mqttBatteryTopic), "vehicle/%s/battery", imei);
-    snprintf(mqttVoltageTopic, sizeof(mqttBatteryTopic), "vehicle/%s/voltage", imei);
+    snprintf(mqttLiionTopic, sizeof(mqttBatteryTopic), "vehicle/%s/liion", imei);
 
 
     char ip[16];

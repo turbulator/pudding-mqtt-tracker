@@ -7,8 +7,8 @@
 
 extern HANDLE adcTaskHandle;
 
-extern float battery;
-
 extern void adcTask(void* pData);
+extern float getBattery(void);
+extern float getLiion(void);
 
 #endif /* __ADC_H_ */
