@@ -425,8 +425,8 @@ void OnTimerPublish(void* param)
 
     CheckExternalPower();
 
-    MqttPublishBattery(client);
-    MqttPublishLiion(client);
+    //MqttPublishBattery(client);
+    //MqttPublishLiion(client);
 
     MqttPublishLocation(client); 
 
@@ -512,6 +512,7 @@ void MqttTaskEventDispatch(MQTT_Event_t* pEvent)
             StartTimerPublish(pEvent->client);
             MqttPublishState(pEvent->client);
             MqttPublishBattery(pEvent->client);
+            MqttPublishLiion(pEvent->client);
             break;
 
         case MQTT_EVENT_DISCONNECTED:
