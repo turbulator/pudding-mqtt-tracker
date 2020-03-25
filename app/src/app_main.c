@@ -429,8 +429,8 @@ void MqttPublishLocation(MQTT_Client_t* client)
         temp = (int)(gpsInfo->rmc.longitude.value / gpsInfo->rmc.longitude.scale / 100);
         double longitude = temp + (double)(gpsInfo->rmc.longitude.value - temp * gpsInfo->rmc.longitude.scale * 100) / gpsInfo->rmc.longitude.scale / 60.0;
 
-        snprintf(mqttBuffer, sizeof(mqttBuffer), "{\"longitude\": %f,\"latitude\": %f}", 
-                                                            longitude, latitude);
+        snprintf(mqttBuffer, sizeof(mqttBuffer), "{\"longitude\": %f,\"latitude\": %f,\"gps_accuracy\": %f,\"battery_level\": %f}", 
+                                                            longitude, latitude, gpsInfo->gga.hdop.value * 2.5, GetLiionLevel());
 
 
         MQTT_Error_t err = MQTT_Publish(client, mqttLocationTopic, mqttBuffer, strlen(mqttBuffer), 1, 2, 0, OnPublishLocation, NULL);
