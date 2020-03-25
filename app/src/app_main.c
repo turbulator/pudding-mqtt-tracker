@@ -576,7 +576,6 @@ void app_MqttTask(void *pData)
 
     WatchDog_KeepAlive();
 
-    GpsInit();
     MqttInit();
 
     WatchDog_KeepAlive();
@@ -611,6 +610,9 @@ void app_MainTask(void *pData)
     GPIO_Init(stateLed);
     GPIO_Init(powerLed);
     GPIO_Init(powerSupport);
+    
+    // Create GPS task
+    GpsTaskInit();
 
     // Create ADC task
     AdcTaskInit();
