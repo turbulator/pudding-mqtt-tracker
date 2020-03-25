@@ -23,7 +23,7 @@
 #include "api_hal_watchdog.h"
 
 #include "secret.h"
-#include "adc.h"
+#include "adc_task.h"
 
 #define MAIN_TASK_STACK_SIZE    (2048 * 4)
 #define MAIN_TASK_PRIORITY      0
@@ -355,7 +355,7 @@ void MqttPublishBattery(MQTT_Client_t* client)
 {
     Trace(1, "MqttPublishBattery");
 
-    snprintf(mqttBuffer, sizeof(mqttBuffer), "%.02f", getBattery());
+    snprintf(mqttBuffer, sizeof(mqttBuffer), "%.02f", GetBatteryVoltage());
 
     MQTT_Error_t err = MQTT_Publish(client, mqttBatteryTopic, mqttBuffer, strlen(mqttBuffer), 1, 2, 0, OnPublishBattery, NULL);
 
@@ -377,7 +377,7 @@ void MqttPublishLiion(MQTT_Client_t* client)
 {
     Trace(1, "MqttPublishLiion");
 
-    snprintf(mqttBuffer, sizeof(mqttBuffer), "%.02f", getLiion());
+    snprintf(mqttBuffer, sizeof(mqttBuffer), "%.02f", GetLiionVoltage());
 
     MQTT_Error_t err = MQTT_Publish(client, mqttLiionTopic, mqttBuffer, strlen(mqttBuffer), 1, 2, 0, OnPublishLiion, NULL);
 
@@ -613,8 +613,8 @@ void app_MainTask(void *pData)
     GPIO_Init(powerSupport);
 
     // Create ADC task
-    adcTaskHandle = OS_CreateTask(adcTask,
-                                  NULL, NULL, ADC_TASK_STACK_SIZE, ADC_TASK_PRIORITY, 0, 0, ADC_TASK_NAME);
+    AdcTaskInit();
+    
     // Create MQTT task
     mqttTaskHandle = OS_CreateTask(app_MqttTask,
                                     NULL, NULL, MQTT_TASK_STACK_SIZE, MQTT_TASK_PRIORITY, 0, 0, MQTT_TASK_NAME);

@@ -2,20 +2,22 @@
 #include <api_hal_gpio.h>
 #include <api_hal_adc.h>
 
-#include <adc.h>
+#include "adc_task.h"
 
 #define ADC_STEPS  100
+#define LIION_VOLTAGE_EMPTY  3.2
+#define LIION_VOLTAGE_SCALE  100
 
 
-HANDLE adcTaskHandle = NULL;
-HANDLE adcSema = NULL;
+static HANDLE adcTaskHandle = NULL;
+static HANDLE adcSema = NULL;
 
 
-float battery = 0.0;
-float liion = 0.0;
+static float battery = 0.0;
+static float liion = 0.0;
 
 
-void adcInit() {
+static void AdcInit() {
     ADC_Config_t config0 = {
         .channel = ADC_CHANNEL_0,
         .samplePeriod = ADC_SAMPLE_PERIOD_1MS
@@ -33,7 +35,7 @@ void adcInit() {
 }
 
 
-void updateBattery(void){
+static void UpdateBattery(void){
     uint16_t value = 0, mV = 0;
 
     if(ADC_Read(ADC_CHANNEL_1, &value, &mV)) {
@@ -48,7 +50,7 @@ void updateBattery(void){
 }
 
 
-void updateLiion(void){
+static void UpdateLiion(void){
     uint16_t value = 0, mV = 0;
 
     if(ADC_Read(ADC_CHANNEL_0, &value, &mV)) {
@@ -63,18 +65,18 @@ void updateLiion(void){
 }
 
 
-void adcTask(void* pData){
-    adcInit();
+static void AdcTask(void* pData){
+    AdcInit();
     
     while(1){
-        updateBattery();
-        updateLiion();
+        UpdateBattery();
+        UpdateLiion();
         OS_Sleep(100);
     }
 }
 
 
-float getBattery(void){
+float GetBatteryVoltage(void){
     float value;
 
     OS_WaitForSemaphore(adcSema, OS_WAIT_FOREVER);
@@ -85,7 +87,7 @@ float getBattery(void){
 }
 
 
-float getLiion(void){
+float GetLiionVoltage(void){
     float value;
 
     OS_WaitForSemaphore(adcSema, OS_WAIT_FOREVER);
@@ -93,4 +95,21 @@ float getLiion(void){
     OS_ReleaseSemaphore(adcSema);
 
     return value;
+}
+
+float GetLiionLevel(void){
+    float value;
+
+    OS_WaitForSemaphore(adcSema, OS_WAIT_FOREVER);
+        value = (liion - LIION_VOLTAGE_EMPTY) * LIION_VOLTAGE_SCALE;
+    OS_ReleaseSemaphore(adcSema);
+
+    return value;
+}
+
+
+
+void AdcTaskInit(void){
+    adcTaskHandle = OS_CreateTask(AdcTask,
+                                  NULL, NULL, ADC_TASK_STACK_SIZE, ADC_TASK_PRIORITY, 0, 0, ADC_TASK_NAME);
 }

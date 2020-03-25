@@ -5,10 +5,9 @@
 #define ADC_TASK_PRIORITY      1
 #define ADC_TASK_NAME          "ADC Task"
 
-extern HANDLE adcTaskHandle;
-
-extern void adcTask(void* pData);
-extern float getBattery(void);
-extern float getLiion(void);
+extern void AdcTaskInit(void);
+extern float GetBatteryVoltage(void);
+extern float GetLiionVoltage(void);
+extern float GetLiionLevel(void);
 
 #endif /* __ADC_H_ */
