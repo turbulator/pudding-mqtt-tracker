@@ -5,8 +5,8 @@
 #include "adc_task.h"
 
 #define ADC_STEPS  100
-#define LIION_VOLTAGE_EMPTY  3.2
-#define LIION_VOLTAGE_SCALE  100
+#define LIION_VOLTAGE_EMPTY  3.5
+#define LIION_VOLTAGE_SCALE  143
 
 
 static HANDLE adcTaskHandle = NULL;
@@ -35,10 +35,10 @@ static void AdcInit() {
 }
 
 
-static void UpdateBattery(void){
+static void UpdateBattery(void) {
     uint16_t value = 0, mV = 0;
 
-    if(ADC_Read(ADC_CHANNEL_1, &value, &mV)) {
+    if (ADC_Read(ADC_CHANNEL_1, &value, &mV)) {
         OS_WaitForSemaphore(adcSema, OS_WAIT_FOREVER);
             if (battery == 0.0) {
                 battery = ((float)mV) * 11 / 1000;
@@ -65,7 +65,7 @@ static void UpdateLiion(void){
 }
 
 
-static void AdcTask(void* pData){
+static void AdcTask(void* pData) {
     AdcInit();
     
     while(1){
@@ -87,7 +87,7 @@ float GetBatteryVoltage(void){
 }
 
 
-float GetLiionVoltage(void){
+float GetLiionVoltage(void) {
     float value;
 
     OS_WaitForSemaphore(adcSema, OS_WAIT_FOREVER);
@@ -97,12 +97,18 @@ float GetLiionVoltage(void){
     return value;
 }
 
-float GetLiionLevel(void){
+float GetLiionLevel(void) {
     float value;
 
     OS_WaitForSemaphore(adcSema, OS_WAIT_FOREVER);
         value = (liion - LIION_VOLTAGE_EMPTY) * LIION_VOLTAGE_SCALE;
     OS_ReleaseSemaphore(adcSema);
+
+    if (value > 100.0) {
+        value = 100.0;
+    } else if (value < 0.0) {
+        value = 0.0;
+    }
 
     return value;
 }
