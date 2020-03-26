@@ -430,14 +430,14 @@ void MqttPublishLocation(MQTT_Client_t* client)
         double longitude = temp + (double)(gpsInfo->rmc.longitude.value - temp * gpsInfo->rmc.longitude.scale * 100) / gpsInfo->rmc.longitude.scale / 60.0;
 
         snprintf(mqttBuffer, sizeof(mqttBuffer), "{\"longitude\": %f,\"latitude\": %f,\"gps_accuracy\": %f,\"battery_level\": %f}", 
-                                                            longitude, latitude, gpsInfo->gga.hdop.value * 2.5, GetLiionLevel());
+                                                            longitude, latitude, minmea_tofloat(gpsInfo->gga.hdop) * 2.5, GetLiionLevel());
 
 
         MQTT_Error_t err = MQTT_Publish(client, mqttLocationTopic, mqttBuffer, strlen(mqttBuffer), 1, 2, 0, OnPublishLocation, NULL);
 
 
         snprintf(mqttBuffer,sizeof(mqttBuffer),"GPS fix mode:%d, GLONASS fix mode:%d, hdop:%f, satellites tracked:%d, gps sates total:%d, is fixed:%s, coordinate:WGS84, Latitude:%f, Longitude:%f, unit:degree, altitude:%f",gpsInfo->gsa[0].fix_type, gpsInfo->gsa[1].fix_type,
-                                                                 gpsInfo->gga.hdop.value,gpsInfo->gga.satellites_tracked, gpsInfo->gsv[0].total_sats, isFixedStr, latitude,longitude,gpsInfo->gga.altitude);
+                                                                 minmea_tofloat(gpsInfo->gga.hdop), gpsInfo->gga.satellites_tracked, gpsInfo->gsv[0].total_sats, isFixedStr, latitude,longitude, minmea_tofloat(gpsInfo->gga.altitude));
        
         err = MQTT_Publish(client, mqttLocationTopic, mqttBuffer, strlen(mqttBuffer), 1, 2, 0, OnPublishLocation, NULL);
 
