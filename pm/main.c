@@ -2,7 +2,7 @@
 #include <avr/sleep.h>
 
 #define WAKE_UP_INTERVAL        450
-#define BATTERY_LOW_THRESHOLD   744  // ~3,2V
+#define BATTERY_LOW_THRESHOLD   815  // ~3,5V
 
 #define WDTO_32MS               0x01
 #define WDTO_4S                 0x20
