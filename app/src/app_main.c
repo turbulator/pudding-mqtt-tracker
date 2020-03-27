@@ -76,6 +76,7 @@ typedef struct {
 typedef enum {
     MQTT_STATUS_DISCONNECTED = 0,
     MQTT_STATUS_CONNECTED,
+    MQTT_STATUS_LOCATION_PUBLISHED,
     MQTT_STATUS_MAX
 } MQTT_Status_t;
 
@@ -85,48 +86,12 @@ MQTT_Status_t mqttStatus = MQTT_STATUS_DISCONNECTED;
 void StartTimerConnect(MQTT_Client_t* client);
 void StartTimerPublish(MQTT_Client_t* client);
 
+
     GPIO_config_t stateLed = {
         .mode         = GPIO_MODE_OUTPUT,
         .pin          = GPIO_PIN28,
         .defaultLevel = GPIO_LEVEL_HIGH
     };
-
-    GPIO_config_t powerLed = {
-        .mode         = GPIO_MODE_OUTPUT,
-        .pin          = GPIO_PIN27,
-        .defaultLevel = GPIO_LEVEL_HIGH
-    };
-    
-    GPIO_config_t powerSupport = {
-        .mode         = GPIO_MODE_OUTPUT,
-        .pin          = GPIO_PIN29,
-        .defaultLevel = GPIO_LEVEL_HIGH
-    };
-
-
-void CheckExternalPower()
-{
-	static int countdown = 6;
-    uint16_t value = 0, mV = 0;
-    
-    uint8_t percent;
-    uint16_t v = PM_Voltage(&percent);
-    Trace(1,"voltage: %dmV, %d percent", v, percent);
-	
-	if(ADC_Read(ADC_CHANNEL_1, &value, &mV)) {
-        Trace(1,"Countdown: %d, ADC value:%d, %dV", countdown, value, mV * 11 / 1000);
-        if(value > 500) {
-			countdown = 6;
-		} else {
-			if (--countdown < 0) {
-			    GPS_Close();
-                GPIO_SetLevel(powerLed, GPIO_LEVEL_LOW);
-                GPIO_SetLevel(powerSupport, GPIO_LEVEL_LOW);
-                OS_Sleep(10000);
-			}
-		}	
-	}
-}
 
 
 bool AttachActivate()
@@ -298,8 +263,6 @@ void OnTimerStartConnect(void* param)
         Trace(1,"already connected!");
         return;
     }
-    
-    CheckExternalPower();
 
     err = MQTT_Connect(client, BROKER_IP, BROKER_PORT, OnMqttConnection, NULL, &ci);
 
@@ -450,11 +413,6 @@ void MqttPublishLocation(MQTT_Client_t* client)
 void OnTimerPublish(void* param)
 {
     MQTT_Client_t* client = (MQTT_Client_t*)param;
-
-    CheckExternalPower();
-
-    //MqttPublishBattery(client);
-    //MqttPublishLiion(client);
 
     MqttPublishLocation(client); 
 
@@ -610,8 +568,9 @@ void app_MainTask(void *pData)
     PM_SetSysMinFreq(PM_SYS_FREQ_312M);
     
     GPIO_Init(stateLed);
-    GPIO_Init(powerLed);
-    GPIO_Init(powerSupport);
+
+    // Create PM task
+    PmTaskInit();
 
     // Create ADC task
     AdcTaskInit();
