@@ -3,10 +3,10 @@
 
 #include <api_os.h>
 #include <api_info.h>
-
 #include <api_gps.h>
 #include <api_debug.h>
 #include <api_mqtt.h>
+#include <api_socket.h>
 
 #include <api_hal_watchdog.h>
 #include <api_hal_gpio.h>
@@ -259,6 +259,12 @@ void MqttTask(void *pData) {
     semMqttStart = NULL;
 
     WatchDog_KeepAlive();
+
+    // Randomize the TCP Sequence number
+    uint8_t count = clock() & 0x07; // Semi-random value from 0 - 6
+    for(uint8_t i = 0; i < count; i++) {
+        Socket_TcpipClose(Socket_TcpipConnect(TCP, "127.0.0.1", 12345));
+    }
 
     MqttInit();
   
