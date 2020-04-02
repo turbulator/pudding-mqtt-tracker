@@ -50,7 +50,7 @@ uint16_t read_adc(void)
 }
 
 void main() {
-    int cnt = WAKE_UP_INTERVAL - 75;  // 10 minutes before wake up
+    int cnt = WAKE_UP_INTERVAL / 2;  // 30 minutes before wake up
     int voltage;
 
     DDRB |= _BV(PB0);    // PB0 - A9G enable
