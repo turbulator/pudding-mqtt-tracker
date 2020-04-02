@@ -32,7 +32,7 @@ void PmShutdown(void) {
     Trace(1,"PM Shutdown");
 
     // Send offline mqtt message
-    MqttPublishState(MQTT_PAYLOAD_STATE_OFFLINE);
+    MqttPublishStateOffline();
     OS_Sleep(MQTT_INTERVAL);
 
     GPIO_SetLevel(gpioPower, GPIO_LEVEL_LOW);
