@@ -32,6 +32,7 @@ char mqttLocationTopic[64] = "";
 char mqttStateTopic[64] = "";
 char mqttBatteryTopic[64] = "";
 char mqttLiionTopic[64] = "";
+char mqttSpeedTopic[64] = "";
 char mqttBuffer[1024] = "";
 
 MQTT_Status_t mqttStatus = MQTT_STATUS_DISCONNECTED;
@@ -140,6 +141,35 @@ void MqttPublishLiion(void) {
         Trace(1,"MQTT publish location error, error code: %d", err);
 }
 
+
+void OnPublishSpeed(void* arg, MQTT_Error_t err) {
+    if(err == MQTT_ERROR_NONE) {
+        Trace(1,"MQTT publish speed success");
+    } else {
+        Trace(1,"MQTT publish speed error, error code: %d", err);
+    }
+
+    WatchDog_KeepAlive();
+}
+
+
+void MqttPublishSpeed(void) {
+    Trace(1, "MqttPublishSpeed");
+
+    GPS_Info_t* gpsInfo = Gps_GetInfo();
+    uint8_t isFixed = gpsInfo->gsa[0].fix_type > gpsInfo->gsa[1].fix_type ? gpsInfo->gsa[0].fix_type : gpsInfo->gsa[1].fix_type;
+
+    if(isFixed == 2 || isFixed == 3) { /* We have 2D or 3D fix */ 
+
+        snprintf(mqttBuffer, sizeof(mqttBuffer), "%.02f", minmea_tofloat(&gpsInfo->vtg.speed_kph)); 
+        MQTT_Error_t err = MQTT_Publish(mqttClient, mqttSpeedTopic, mqttBuffer, strlen(mqttBuffer), 1, 1, 0, OnPublishSpeed, NULL);
+
+        if(err != MQTT_ERROR_NONE)
+            Trace(1,"MQTT publish speed error, error code: %d", err);
+    }
+}
+
+
 void OnPublishTracker(void* arg, MQTT_Error_t err) {
     if(err == MQTT_ERROR_NONE) {
         Trace(1,"MQTT publish success");
@@ -203,7 +233,7 @@ void MqttPublishTelemetry(void) {
     if (cnt++ % 2 == 0) {
         MqttPublishBattery(); 
         MqttPublishLiion(); 
-        // TODO: MqttPublishSpeed(); 
+        MqttPublishSpeed(); 
         MqttPublishTracker();
     }
 }
@@ -216,6 +246,7 @@ void MqttInit(void) {
     snprintf(mqttStateTopic, sizeof(mqttStateTopic), "vehicle/%s/state", imei);
     snprintf(mqttBatteryTopic, sizeof(mqttBatteryTopic), "vehicle/%s/battery", imei);
     snprintf(mqttLiionTopic, sizeof(mqttBatteryTopic), "vehicle/%s/liion", imei);
+    snprintf(mqttSpeedTopic, sizeof(mqttSpeedTopic), "vehicle/%s/speed", imei);
 
     mqttClient = MQTT_ClientNew();
 
