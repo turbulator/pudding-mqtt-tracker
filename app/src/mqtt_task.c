@@ -172,10 +172,10 @@ void MqttPublishSpeed(void) {
 
 void OnPublishTracker(void* arg, MQTT_Error_t err) {
     if(err == MQTT_ERROR_NONE) {
-        Trace(1,"MQTT publish success");
+        Trace(1,"MQTT publish tracker success");
         mqttStatus = MQTT_STATUS_LOCATION_PUBLISHED;
     } else {
-        Trace(1,"MQTT publish error, error code: %d", err);
+        Trace(1,"MQTT publish tracker error, error code: %d", err);
     }
 
     WatchDog_KeepAlive();
@@ -222,7 +222,7 @@ void MqttPublishTracker(void) {
         err = MQTT_Publish(mqttClient, mqttLocationTopic, mqttBuffer, strlen(mqttBuffer), 1, 2, 0, OnPublishTracker, NULL);*/
 
         if(err != MQTT_ERROR_NONE)
-            Trace(1,"MQTT publish location error, error code: %d", err);
+            Trace(1,"MQTT publish tracker error, error code: %d", err);
     }
 }
 
