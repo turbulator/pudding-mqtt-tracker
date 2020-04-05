@@ -245,7 +245,7 @@ void MqttInit(void) {
     snprintf(mqttLocationTopic, sizeof(mqttLocationTopic), "location/%s", imei);
     snprintf(mqttStateTopic, sizeof(mqttStateTopic), "vehicle/%s/state", imei);
     snprintf(mqttBatteryTopic, sizeof(mqttBatteryTopic), "vehicle/%s/battery", imei);
-    snprintf(mqttLiionTopic, sizeof(mqttBatteryTopic), "vehicle/%s/liion", imei);
+    snprintf(mqttLiionTopic, sizeof(mqttLiionTopic), "vehicle/%s/liion", imei);
     snprintf(mqttSpeedTopic, sizeof(mqttSpeedTopic), "vehicle/%s/speed", imei);
 
     mqttClient = MQTT_ClientNew();
