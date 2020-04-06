@@ -67,7 +67,9 @@ static void UpdateLiion(void){
 
 static void AdcTask(void* pData) {
     AdcInit();
-    
+
+    OS_Sleep(1000);
+
     while(1){
         UpdateBattery();
         UpdateLiion();
