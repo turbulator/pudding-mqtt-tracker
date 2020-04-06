@@ -6,6 +6,13 @@
 #define MQTT_TASK_NAME             "MQTT Task"
 
 #define MQTT_INTERVAL              5000
+#define MQTT_WATCHDOG_INTERVAL     20
+
+#define MQTT_TRACKER_TOPIC_FORMAT  "vehicle/%s/tracker"
+#define MQTT_STATE_TOPIC_FORMAT    "vehicle/%s/state"
+#define MQTT_BATTERY_TOPIC_FORMAT  "vehicle/%s/battery"
+#define MQTT_LIION_TOPIC_FORMAT    "vehicle/%s/liion"
+#define MQTT_SPEED_TOPIC_FORMAT    "vehicle/%s/speed"
 
 #define MQTT_PAYLOAD_STATE_ONLINE  "online"
 #define MQTT_PAYLOAD_STATE_OFFLINE "offline"
@@ -35,7 +42,6 @@ typedef enum {
 
 extern HANDLE semMqttStart;
 
-void GpsInit(void);
 void MqttPublishState(char *mqttStatePayload);
 MQTT_Status_t getMqttState(void);
 void MqttTaskInit(void);

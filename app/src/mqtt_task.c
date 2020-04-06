@@ -27,8 +27,7 @@ MQTT_Connect_Info_t ci;
 MQTT_Client_t *mqttClient = NULL;
 
 char imei[16] = "";
-char buffer[1024] = "";
-char mqttLocationTopic[64] = "";
+char mqttTrackerTopic[64] = "";
 char mqttStateTopic[64] = "";
 char mqttBatteryTopic[64] = "";
 char mqttLiionTopic[64] = "";
@@ -213,7 +212,7 @@ void MqttPublishTracker(void) {
                                                             longitude, latitude, minmea_tofloat(&gpsInfo->gga.hdop) * 25, GetLiionLevel());
 
 
-        MQTT_Error_t err = MQTT_Publish(mqttClient, mqttLocationTopic, mqttBuffer, strlen(mqttBuffer), 1, 1, 0, OnPublishTracker, NULL);
+        MQTT_Error_t err = MQTT_Publish(mqttClient, mqttTrackerTopic, mqttBuffer, strlen(mqttBuffer), 1, 1, 0, OnPublishTracker, NULL);
 
 
         /*snprintf(mqttBuffer,sizeof(mqttBuffer),"GPS fix mode:%d, GLONASS fix mode:%d, hdop:%f, satellites tracked:%d, gps sates total:%d, is fixed:%s, coordinate:WGS84, Latitude:%f, Longitude:%f, unit:degree, altitude:%f",gpsInfo->gsa[0].fix_type, gpsInfo->gsa[1].fix_type,
@@ -240,17 +239,20 @@ void MqttPublishTelemetry(void) {
 
 
 void MqttInit(void) {
+    Trace(1, "MQTT init");
+
     INFO_GetIMEI(imei);
     Trace(1,"IMEI: %s", imei);
-    snprintf(mqttLocationTopic, sizeof(mqttLocationTopic), "location/%s", imei);
-    snprintf(mqttStateTopic, sizeof(mqttStateTopic), "vehicle/%s/state", imei);
-    snprintf(mqttBatteryTopic, sizeof(mqttBatteryTopic), "vehicle/%s/battery", imei);
-    snprintf(mqttLiionTopic, sizeof(mqttLiionTopic), "vehicle/%s/liion", imei);
-    snprintf(mqttSpeedTopic, sizeof(mqttSpeedTopic), "vehicle/%s/speed", imei);
+    
+    snprintf(mqttTrackerTopic, sizeof(mqttTrackerTopic), MQTT_TRACKER_TOPIC_FORMAT, imei);
+    snprintf(mqttStateTopic, sizeof(mqttStateTopic), MQTT_STATE_TOPIC_FORMAT, imei);
+    snprintf(mqttBatteryTopic, sizeof(mqttBatteryTopic), MQTT_BATTERY_TOPIC_FORMAT, imei);
+    snprintf(mqttLiionTopic, sizeof(mqttLiionTopic), MQTT_LIION_TOPIC_FORMAT, imei);
+    snprintf(mqttSpeedTopic, sizeof(mqttSpeedTopic), MQTT_SPEED_TOPIC_FORMAT, imei);
 
     mqttClient = MQTT_ClientNew();
-
     memset(&ci, 0, sizeof(MQTT_Connect_Info_t));
+
     ci.client_id = imei;
     ci.client_user = CLIENT_USER;
     ci.client_pass = CLIENT_PASS;
@@ -272,17 +274,15 @@ void MqttInit(void) {
     ci.client_key  = client_key;
     ci.client_key_passwd = NULL;
     ci.broker_hostname = BROKER_HOSTNAME;
-    ci.ssl_min_version = MQTT_SSL_VERSION_TLSv1_2;
+    ci.ssl_min_version = MQTT_SSL_VERSION_TLSv1_1;
     ci.ssl_max_version = MQTT_SSL_VERSION_TLSv1_2;
     ci.entropy_custom = "GPRS_A9";
 #endif
-
-    Trace(1, "MQTT init");
 }
 
 
 void MqttTask(void *pData) {
-    WatchDog_Open(WATCHDOG_SECOND_TO_TICK(60));
+    WatchDog_Open(WATCHDOG_SECOND_TO_TICK(MQTT_WATCHDOG_INTERVAL));
 
     semMqttStart = OS_CreateSemaphore(0);
     OS_WaitForSemaphore(semMqttStart, OS_WAIT_FOREVER);
