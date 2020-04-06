@@ -9,47 +9,43 @@
 
 HANDLE gpsTaskHandle = NULL;
 
+static char buffer[1024] = "";
 
-void GpsInit(void){
+
+void GpsInit(void) {
     GPS_Info_t* gpsInfo = Gps_GetInfo();
 
     // Open GPS hardware(UART2 open either)
+    Trace(1, "Gps init");
     GPS_Init();
+    Trace(1, "Gps open");
     GPS_Open(NULL);
 
     // Wait for gps start up, or gps will not response command
     while(gpsInfo->rmc.latitude.value == 0)
         OS_Sleep(1000);
+    Trace(1, "Gps responds");
 
-    // Set gps nmea output interval
-    for(uint8_t i = 0; i < 5; i++){
-        bool ret = GPS_SetOutputInterval(10000);
-        if(ret)
-            break;
-        OS_Sleep(1000);
-    }
+    if(!GPS_GetVersion(buffer, 150))
+        Trace(1, "Get gps firmware version fail");
+    else
+        Trace(1, "Gps firmware version:%s", buffer);
 
-    // Set fix mode
-    if(!GPS_SetFixMode(GPS_FIX_MODE_NORMAL))
-        Trace(1,"set fix mode fail");
-
-    // Set GPS + GLONASS
-    if(!GPS_SetSearchMode(true, true, false, false))
-        Trace(1,"set search mode fail");
-
-    // Enable SBAS
+    if(!GPS_SetFixMode(GPS_FIX_MODE_LOW_SPEED))
+        Trace(1, "Set fix mode fail");
+    
     if(!GPS_SetSBASEnable(true))
-        Trace(1,"enable sbas fail");
+        Trace(1, "Enable sbas fail");
 
-    // Set power safe mode
     if(!GPS_SetLpMode(GPS_LP_MODE_SUPPER_LP))
-        Trace(1, "set gps lp mode fail");
+        Trace(1, "Set gps lp mode fail");
 
-    // Set output interval
     if(!GPS_SetOutputInterval(1000))
-        Trace(1, "set nmea output interval fail");
-}
+        Trace(1, "Set nmea output interval fail");
 
+    if(!GPS_SetSearchMode(true, false, true, false))
+        Trace(1, "Set search mode fail");
+}
 
 void GpsTask(void* pData){
     // Initialize the HW

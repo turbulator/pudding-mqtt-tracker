@@ -1,8 +1,10 @@
 #include <api_os.h>
+#include <api_debug.h>
+
 #include <api_hal_gpio.h>
-#include <api_gps.h>
 
 #include "pm_task.h"
+#include "mqtt_task.h"
 
 
 static HANDLE pmTaskHandle = NULL;
@@ -21,13 +23,18 @@ static GPIO_config_t gpioIgn = {
 
 static GPIO_config_t gpioPower = {
     .mode               = GPIO_MODE_OUTPUT,
-    .pin                = GPIO_PIN30,
+    .pin                = GPIO_PIN29,
     .defaultLevel       = GPIO_LEVEL_HIGH
 };
 
 
 void PmShutdown(void) {
-    // TODO: send offline mqtt message
+    Trace(1,"PM Shutdown");
+
+    // Send offline mqtt message
+    MqttPublishState(MQTT_PAYLOAD_STATE_OFFLINE);
+    OS_Sleep(MQTT_INTERVAL);
+
     GPIO_SetLevel(gpioPower, GPIO_LEVEL_LOW);
     OS_Sleep(10000);
 }
@@ -46,8 +53,9 @@ void UpdateIgn(void) {
         case PM_STATE_STANDBY:
             if (ign == GPIO_LEVEL_LOW) {
                 // Once we've got IGN we should go to ON state
+                Trace(1,"PM Active mode");
                 state = PM_STATE_ACTIVE;
-            } else if (getMqttState() == 2 /*MQTT_STATUS_LOCATION_PUBLISHED*/) {
+            } else if (getMqttState() == MQTT_STATUS_LOCATION_PUBLISHED) {
                 // We are in STANDBY state and we've already published own lacation
                 // Where are no reason to be active - just do shutdown
                 PmShutdown();
@@ -61,11 +69,15 @@ void UpdateIgn(void) {
             break;
     }
 
-    if (--shutdownCounter == 0) {
+    if (--shutdownCounter <= 0) {
         // The IGN has lost for a long time
         // Save battery - just do shutdown
         PmShutdown();
     }
+
+    if (shutdownCounter % 10 == 0)
+        Trace(1,"shutdownCounter = %d", shutdownCounter);
+
 }
 
 

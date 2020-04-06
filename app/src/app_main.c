@@ -1,6 +1,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <api_os.h>
+#include <api_call.h>
 #include <api_gps.h>
 #include <api_event.h>
 #include <api_hal_uart.h>
@@ -22,7 +23,7 @@
 #include "api_hal_pm.h"
 #include "api_hal_watchdog.h"
 
-#include "secret.h"
+#include "call.h"
 #include "pm_task.h"
 #include "adc_task.h"
 #include "mqtt_task.h"
@@ -30,6 +31,10 @@
 #define MAIN_TASK_STACK_SIZE    (2048 * 4)
 #define MAIN_TASK_PRIORITY      0
 #define MAIN_TASK_NAME          "Main Task"
+
+#define PDP_CONTEXT_APN "internet.mts.ru"
+#define PDP_CONTEXT_USERNAME "mts"
+#define PDP_CONTEXT_PASSWD "mts"
 
 
 static HANDLE mainTaskHandle = NULL;
@@ -120,6 +125,11 @@ void EventDispatch(API_Event_t* pEvent)
             GPS_Update(pEvent->pParam1, pEvent->param1);
             break;
 
+        case API_EVENT_ID_CALL_DIAL://param1: isSuccess, param2:error code(CALL_Error_t)
+            Trace(1,"Is dial success: %d, error code: %d", pEvent->param1, pEvent->param2);
+            CALL_HangUp();
+            break;
+ 
         default:
             break;
     }
@@ -142,9 +152,12 @@ void app_MainTask(void *pData)
     TIME_SetIsAutoUpdateRtcTime(true); // Local time will be synced with GPS
 
     PM_PowerEnable(POWER_TYPE_VPAD, true); // GPIO0  ~ GPIO7  and GPIO25 ~ GPIO36    2.8V
-    PM_SetSysMinFreq(PM_SYS_FREQ_312M);
+    //PM_SetSysMinFreq(PM_SYS_FREQ_312M);
     
     GPIO_Init(stateLed);
+
+    // Init call button
+    CallInit();
 
     // Create PM task
     PmTaskInit();
@@ -154,6 +167,8 @@ void app_MainTask(void *pData)
     
     // Create MQTT task
     MqttTaskInit();
+    
+    GpsTaskInit();
 
     // Wait and process system events
     while(1) {

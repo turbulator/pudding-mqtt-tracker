@@ -6,7 +6,7 @@
 #define PM_TASK_NAME             "PM Task"
 
 #define PM_UPDATE_IGN_INTERVAL   1000
-#define PM_SHUTDOWN_COUNTER_MAX  120
+#define PM_SHUTDOWN_COUNTER_MAX  180
 
 
 typedef enum {
