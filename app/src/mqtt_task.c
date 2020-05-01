@@ -159,10 +159,17 @@ void MqttPublishSpeed(void) {
     GPS_Info_t* gpsInfo = Gps_GetInfo();
     uint8_t isFixed = gpsInfo->gsa[0].fix_type > gpsInfo->gsa[1].fix_type ? gpsInfo->gsa[0].fix_type : gpsInfo->gsa[1].fix_type;
 
-    if(isFixed == 2 || isFixed == 3) { /* We have 2D or 3D fix */ 
+    if (PmGetIngState() == true) {
+        if(isFixed == 2 || isFixed == 3) { /* We have 2D or 3D fix */ 
+            snprintf(mqttBuffer, sizeof(mqttBuffer), "%.02f", minmea_tofloat(&gpsInfo->vtg.speed_kph)); 
+            MQTT_Error_t err = MQTT_Publish(mqttClient, mqttSpeedTopic, mqttBuffer, strlen(mqttBuffer), 1, 1, 1, OnPublishSpeed, NULL);
 
-        snprintf(mqttBuffer, sizeof(mqttBuffer), "%.02f", minmea_tofloat(&gpsInfo->vtg.speed_kph)); 
-        MQTT_Error_t err = MQTT_Publish(mqttClient, mqttSpeedTopic, mqttBuffer, strlen(mqttBuffer), 1, 1, 0, OnPublishSpeed, NULL);
+            if(err != MQTT_ERROR_NONE)
+                Trace(1,"MQTT publish speed error, error code: %d", err);
+        }
+    } else {
+        snprintf(mqttBuffer, sizeof(mqttBuffer), "0.0"); 
+        MQTT_Error_t err = MQTT_Publish(mqttClient, mqttSpeedTopic, mqttBuffer, strlen(mqttBuffer), 1, 1, 1, OnPublishSpeed, NULL);
 
         if(err != MQTT_ERROR_NONE)
             Trace(1,"MQTT publish speed error, error code: %d", err);

@@ -27,6 +27,10 @@ static GPIO_config_t gpioPower = {
     .defaultLevel       = GPIO_LEVEL_HIGH
 };
 
+bool PmGetIngState(void) {
+    return ign == GPIO_LEVEL_LOW ? true : false;
+}
+
 
 void PmShutdown(void) {
     Trace(1,"PM Shutdown");

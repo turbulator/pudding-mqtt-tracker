@@ -16,6 +16,7 @@ typedef enum {
 } PM_State_t;
 
 
+extern bool PmGetIngState(void);
 extern void PmTaskInit(void);
 
 #endif /* __PM_TASK_H_ */
