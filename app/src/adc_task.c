@@ -3,6 +3,8 @@
 #include <api_hal_adc.h>
 
 #include "adc_task.h"
+#include "call.h"
+
 
 #define ADC_STEPS  100
 #define LIION_VOLTAGE_EMPTY  3.5
@@ -73,7 +75,8 @@ static void AdcTask(void* pData) {
     while(1){
         UpdateBattery();
         UpdateLiion();
-        OS_Sleep(100);
+        CallProcess();
+        OS_Sleep(200);
     }
 }
 

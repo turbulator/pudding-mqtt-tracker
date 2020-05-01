@@ -14,6 +14,7 @@
 #include <gps.h>
 #include <gps_parse.h>
 
+#include "pm_task.h"
 #include "mqtt_task.h"
 #include "adc_task.h"
 #include "secret.h"
@@ -123,10 +124,10 @@ void MqttPublishBattery(void) {
 
     snprintf(mqttBuffer, sizeof(mqttBuffer), "%.02f", GetBatteryVoltage());
 
-    MQTT_Error_t err = MQTT_Publish(mqttClient, mqttBatteryTopic, mqttBuffer, strlen(mqttBuffer), 1, 1, 0, OnPublishBattery, NULL);
+    MQTT_Error_t err = MQTT_Publish(mqttClient, mqttBatteryTopic, mqttBuffer, strlen(mqttBuffer), 1, 0, 0, OnPublishBattery, NULL);
 
     if(err != MQTT_ERROR_NONE)
-        Trace(1,"MQTT publish location error, error code: %d", err);
+        Trace(1,"MQTT publish battery error, error code: %d", err);
 }
 
 void MqttPublishLiion(void) {
@@ -134,10 +135,10 @@ void MqttPublishLiion(void) {
 
     snprintf(mqttBuffer, sizeof(mqttBuffer), "%.02f", GetLiionVoltage());
 
-    MQTT_Error_t err = MQTT_Publish(mqttClient, mqttLiionTopic, mqttBuffer, strlen(mqttBuffer), 1, 1, 0, OnPublishBattery, NULL);
+    MQTT_Error_t err = MQTT_Publish(mqttClient, mqttLiionTopic, mqttBuffer, strlen(mqttBuffer), 1, 0, 0, OnPublishBattery, NULL);
 
     if(err != MQTT_ERROR_NONE)
-        Trace(1,"MQTT publish location error, error code: %d", err);
+        Trace(1,"MQTT publish liion error, error code: %d", err);
 }
 
 
@@ -228,13 +229,24 @@ void MqttPublishTracker(void) {
 
 void MqttPublishTelemetry(void) {
     static int cnt = 0;
-    
-    if (cnt++ % 2 == 0) {
+
+    if (cnt % 60 == 0) {
         MqttPublishBattery(); 
+    }
+
+    if (cnt % 60 == 30) {
         MqttPublishLiion(); 
-        MqttPublishSpeed(); 
+    }
+
+    if (cnt % 10 == 0) {
         MqttPublishTracker();
     }
+
+    if (cnt % 10 == 5) {
+        MqttPublishSpeed(); 
+    }
+
+    cnt++;
 }
 
 
@@ -256,7 +268,7 @@ void MqttInit(void) {
     ci.client_id = imei;
     ci.client_user = CLIENT_USER;
     ci.client_pass = CLIENT_PASS;
-    ci.keep_alive = 60;
+    ci.keep_alive = 20;
     ci.clean_session = 1;
     ci.use_ssl = false;
 #if 1  // Set connection status offline

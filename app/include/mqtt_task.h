@@ -5,8 +5,8 @@
 #define MQTT_TASK_PRIORITY         1
 #define MQTT_TASK_NAME             "MQTT Task"
 
-#define MQTT_INTERVAL              5000
-#define MQTT_WATCHDOG_INTERVAL     20
+#define MQTT_INTERVAL              1000
+#define MQTT_WATCHDOG_INTERVAL     2 * 60
 
 #define MQTT_TRACKER_TOPIC_FORMAT  "vehicle/%s/tracker"
 #define MQTT_STATE_TOPIC_FORMAT    "vehicle/%s/state"
@@ -17,17 +17,6 @@
 #define MQTT_PAYLOAD_STATE_ONLINE  "online"
 #define MQTT_PAYLOAD_STATE_OFFLINE "offline"
 
-
-typedef enum {
-    MQTT_EVENT_CONNECTED = 0,
-    MQTT_EVENT_DISCONNECTED,
-    MQTT_EVENT_MAX
-} MQTT_Event_ID_t;
-
-typedef struct {
-    MQTT_Event_ID_t id;
-    MQTT_Client_t* client;
-} MQTT_Event_t;
 
 typedef enum {
     MQTT_STATUS_DISCONNECTED = 0,

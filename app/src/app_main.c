@@ -53,28 +53,28 @@ bool AttachActivate()
     bool ret = Network_GetAttachStatus(&status);
 
     if(!ret) {
-        Trace(2, "get attach status fail");
+        Trace(2, "Get attach status fail");
         return false;
     }
 
-    Trace(2, "attach status: %d", status);
+    Trace(2, "Attach status: %d", status);
 
     if(!status) {
         ret = Network_StartAttach();
 
         if(!ret) {
-            Trace(2, "network attach fail");
+            Trace(2, "Network attach fail");
             return false;
         }
     } else {
         ret = Network_GetActiveStatus(&status);
 
         if(!ret) {
-            Trace(2, "get activate staus fail");
+            Trace(2, "Get activate staus fail");
             return false;
         }
         
-        Trace(2,"activate status:%d",status);
+        Trace(2, "Activate status: %d",status);
         
         if(!status) {
             Network_PDP_Context_t context = {
@@ -125,11 +125,15 @@ void EventDispatch(API_Event_t* pEvent)
             GPS_Update(pEvent->pParam1, pEvent->param1);
             break;
 
-        case API_EVENT_ID_CALL_DIAL://param1: isSuccess, param2:error code(CALL_Error_t)
-            Trace(1,"Is dial success: %d, error code: %d", pEvent->param1, pEvent->param2);
-            CALL_HangUp();
+        case API_EVENT_ID_CALL_DIAL: //param1: isSuccess, param2:error code(CALL_Error_t)
+            //Trace(1,"Is dial success: %d, error code: %d", pEvent->param1, pEvent->param2);
+            CallFinish();
             break;
- 
+
+        case API_EVENT_ID_SIGNAL_QUALITY:
+            //Trace(2,"CSQ: %d", pEvent->param1);
+            break;
+
         default:
             break;
     }
