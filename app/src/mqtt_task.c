@@ -124,7 +124,7 @@ void MqttPublishBattery(void) {
 
     snprintf(mqttBuffer, sizeof(mqttBuffer), "%.02f", GetBatteryVoltage());
 
-    MQTT_Error_t err = MQTT_Publish(mqttClient, mqttBatteryTopic, mqttBuffer, strlen(mqttBuffer), 1, 0, 0, OnPublishBattery, NULL);
+    MQTT_Error_t err = MQTT_Publish(mqttClient, mqttBatteryTopic, mqttBuffer, strlen(mqttBuffer), 1, 0, 1, OnPublishBattery, NULL);
 
     if(err != MQTT_ERROR_NONE)
         Trace(1,"MQTT publish battery error, error code: %d", err);
@@ -135,7 +135,7 @@ void MqttPublishLiion(void) {
 
     snprintf(mqttBuffer, sizeof(mqttBuffer), "%.02f", GetLiionVoltage());
 
-    MQTT_Error_t err = MQTT_Publish(mqttClient, mqttLiionTopic, mqttBuffer, strlen(mqttBuffer), 1, 0, 0, OnPublishBattery, NULL);
+    MQTT_Error_t err = MQTT_Publish(mqttClient, mqttLiionTopic, mqttBuffer, strlen(mqttBuffer), 1, 0, 1, OnPublishBattery, NULL);
 
     if(err != MQTT_ERROR_NONE)
         Trace(1,"MQTT publish liion error, error code: %d", err);
@@ -213,7 +213,7 @@ void MqttPublishTracker(void) {
                                                             longitude, latitude, minmea_tofloat(&gpsInfo->gga.hdop) * 25, GetLiionLevel());
 
 
-        MQTT_Error_t err = MQTT_Publish(mqttClient, mqttTrackerTopic, mqttBuffer, strlen(mqttBuffer), 1, 1, 0, OnPublishTracker, NULL);
+        MQTT_Error_t err = MQTT_Publish(mqttClient, mqttTrackerTopic, mqttBuffer, strlen(mqttBuffer), 1, 1, 1, OnPublishTracker, NULL);
 
 
         /*snprintf(mqttBuffer,sizeof(mqttBuffer),"GPS fix mode:%d, GLONASS fix mode:%d, hdop:%f, satellites tracked:%d, gps sates total:%d, is fixed:%s, coordinate:WGS84, Latitude:%f, Longitude:%f, unit:degree, altitude:%f",gpsInfo->gsa[0].fix_type, gpsInfo->gsa[1].fix_type,
