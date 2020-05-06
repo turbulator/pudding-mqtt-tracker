@@ -132,6 +132,7 @@ void EventDispatch(API_Event_t* pEvent)
 
         case API_EVENT_ID_SIGNAL_QUALITY:
             //Trace(2,"CSQ: %d", pEvent->param1);
+            MqttPublishGsm(pEvent->param1);
             break;
 
         default:

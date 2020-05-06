@@ -34,6 +34,7 @@ char mqttBatteryTopic[64] = "";
 char mqttLiionTopic[64] = "";
 char mqttSpeedTopic[64] = "";
 char mqttIgnTopic[64] = "";
+char mqttGsmTopic[64] = "";
 char mqttBuffer[1024] = "";
 
 MQTT_Status_t mqttStatus = MQTT_STATUS_DISCONNECTED;
@@ -143,6 +144,31 @@ void MqttPublishIgn(void) {
     } else {
         MqttPublishIgnPayload(MQTT_PAYLOAD_OFF);
     }
+}
+
+
+void OnPublishGsm(void *arg, MQTT_Error_t err) {
+    if(err == MQTT_ERROR_NONE) {
+        Trace(1,"MQTT publish GSM success");
+    } else {
+        Trace(1,"MQTT publish GSM error, error code: %d", err);
+    }
+
+    WatchDog_KeepAlive();
+}
+
+void MqttPublishGsm(int gsm_level) {
+    Trace(1, "MqttPublishGsm");
+
+    if (mqttStatus < MQTT_STATUS_CONNECTED) 
+        return;
+
+    snprintf(mqttBuffer, sizeof(mqttBuffer), "%d", gsm_level);
+
+    MQTT_Error_t err = MQTT_Publish(mqttClient, mqttGsmTopic, mqttPayload, strlen(mqttPayload), 1, 2, 1, OnPublishGsm, NULL);
+
+    if(err != MQTT_ERROR_NONE)
+        Trace(1,"MQTT publish GSM error, error code: %d", err);
 }
 
 
@@ -306,6 +332,7 @@ void MqttInit(void) {
     snprintf(mqttLiionTopic, sizeof(mqttLiionTopic), MQTT_LIION_TOPIC_FORMAT, imei);
     snprintf(mqttSpeedTopic, sizeof(mqttSpeedTopic), MQTT_SPEED_TOPIC_FORMAT, imei);
     snprintf(mqttIgnTopic, sizeof(mqttIgnTopic), MQTT_IGN_TOPIC_FORMAT, imei);
+    snprintf(mqttGsmTopic, sizeof(mqttGsmTopic), MQTT_GSM_TOPIC_FORMAT, imei);
 
     mqttClient = MQTT_ClientNew();
     memset(&ci, 0, sizeof(MQTT_Connect_Info_t));

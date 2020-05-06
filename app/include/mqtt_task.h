@@ -14,6 +14,7 @@
 #define MQTT_LIION_TOPIC_FORMAT    "vehicle/%s/liion"
 #define MQTT_SPEED_TOPIC_FORMAT    "vehicle/%s/speed"
 #define MQTT_IGN_TOPIC_FORMAT      "vehicle/%s/ignition"
+#define MQTT_GSM_TOPIC_FORMAT      "vehicle/%s/gsm_level"
 
 #define MQTT_PAYLOAD_STATE_ONLINE  "online"
 #define MQTT_PAYLOAD_STATE_OFFLINE "offline"
@@ -37,6 +38,7 @@ extern HANDLE semMqttStart;
 
 void MqttPublishState(char *mqttPayload);
 void MqttPublishIgnPayload(char *mqttPayload);
+void MqttPublishGsm(int gsm_level);
 MQTT_Status_t getMqttState(void);
 void MqttTaskInit(void);
 
