@@ -306,20 +306,25 @@ void MqttPublishTelemetry(void) {
         MqttPublishIgn(); 
     }
 
-    if (cnt % 60 == 0) {
+    /* One time per minute */
+    if (cnt % 60 == 15) {
         MqttPublishBattery(); 
     }
 
-    if (cnt % 60 == 30) {
+    /* One time per minute */
+    if (cnt % 60 == 45) {
         MqttPublishLiion(); 
     }
 
-    if (cnt % 10 == 0) {
-        MqttPublishTracker();
-    }
-
+    /* Each 10s with 5s timeshift */
     if (cnt % 10 == 5) {
         MqttPublishSpeed(); 
+    }
+
+    /* Each 10s */
+    /* TODO: Make it flexible */
+    if (cnt % 10 == 0) {
+        MqttPublishTracker();
     }
 
     cnt++;
