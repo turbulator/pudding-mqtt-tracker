@@ -300,6 +300,12 @@ void MqttPublishTracker(void) {
 void MqttPublishTelemetry(void) {
     static int cnt = 0;
 
+    /* We have to publish IGN periodically even without change 
+       because it has expiring timeout. One time per 10 min will be enough. */
+    if (cnt % 600 == 0) {
+        MqttPublishIgn(); 
+    }
+
     if (cnt % 60 == 0) {
         MqttPublishBattery(); 
     }
