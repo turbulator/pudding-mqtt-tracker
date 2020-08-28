@@ -1,6 +1,12 @@
 #ifndef __SECRET_H_
 #define __SECRET_H_
 
+#define DIAL_NUMBER "123456789"
+
+#define PDP_CONTEXT_APN "internet.mts.ru"
+#define PDP_CONTEXT_USERNAME "mts"
+#define PDP_CONTEXT_PASSWD "mts"
+
 #define BROKER_HOSTNAME "hostname"
 #define BROKER_IP "1.2.3.4"
 #define BROKER_PORT 1234

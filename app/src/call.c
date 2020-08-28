@@ -2,39 +2,49 @@
 #include <api_debug.h>
 #include <api_call.h>
 
-
 #include <api_hal_gpio.h>
 
-#define DIAL_NUMBER "0123456789"
+#include "call.h"
+#include "main_task.h"
+#include "secret.h"
 
 
-bool isCallInProgress = false;
+void OnCallInt(GPIO_INT_callback_param_t* param);
+void StartCallProcessTimer(void);
 
-static GPIO_config_t gpioCallState = {
+
+static GPIO_config_t gpioCallLed = {
     .mode               = GPIO_MODE_OUTPUT,
-    .pin                = GPIO_PIN7,
+    .pin                = CALL_LED_PIN,
     .defaultLevel       = GPIO_LEVEL_LOW,
 };
 
-void CallFinish(void) {
-    CALL_HangUp();
-    isCallInProgress = false;
-}
-
-void CallProcess(void) {
-    static GPIO_LEVEL gpioCallStateLevel = GPIO_LEVEL_LOW;
-
-    if (isCallInProgress) {
-        gpioCallStateLevel = (gpioCallStateLevel == GPIO_LEVEL_HIGH) ? GPIO_LEVEL_LOW : GPIO_LEVEL_HIGH;
-    } else {
-        gpioCallStateLevel = GPIO_LEVEL_LOW;
+static GPIO_config_t gpioCallInt = {
+    .mode               = GPIO_MODE_INPUT_INT,
+    .pin                = CALL_INT_PIN,
+    .defaultLevel       = GPIO_LEVEL_LOW,
+    .intConfig = {
+        .debounce       = CALL_INT_DEBOUNCE,
+        .type           = GPIO_INT_TYPE_FALLING_EDGE,
+        .callback       = OnCallInt
     }
+};
 
-    GPIO_SetLevel(gpioCallState, gpioCallStateLevel);
+
+void OnCallProcess(void* param) {
+    static GPIO_LEVEL gpioCallLedLevel = GPIO_LEVEL_LOW;
+
+    gpioCallLedLevel = (gpioCallLedLevel == GPIO_LEVEL_HIGH) ? GPIO_LEVEL_LOW : GPIO_LEVEL_HIGH;
+    GPIO_SetLevel(gpioCallLed, gpioCallLedLevel);
+ 
+    StartCallProcessTimer();
 }
 
-void OnCallInt(GPIO_INT_callback_param_t* param)
-{
+void StartCallProcessTimer(void) {
+    OS_StartCallbackTimer(mainTaskHandle, CALL_INTERVAL, OnCallProcess, NULL);
+}
+
+void OnCallInt(GPIO_INT_callback_param_t* param) {
     Trace(1,"OnPinFalling");
 
     if(!CALL_Dial(DIAL_NUMBER)) {
@@ -42,19 +52,16 @@ void OnCallInt(GPIO_INT_callback_param_t* param)
         return;
     }
 
-    isCallInProgress = true;
+    StartCallProcessTimer();
+}
+
+void CallFinish(void) {
+    CALL_HangUp();
+    OS_StopCallbackTimer(mainTaskHandle, OnCallProcess, NULL);
+    GPIO_SetLevel(gpioCallLed, GPIO_LEVEL_LOW);
 }
 
 void CallInit(void) {
-    GPIO_config_t gpioCallInt = {
-        .mode               = GPIO_MODE_INPUT_INT,
-        .pin                = GPIO_PIN1,
-        .defaultLevel       = GPIO_LEVEL_LOW,
-        .intConfig.debounce = 50,
-        .intConfig.type     = GPIO_INT_TYPE_FALLING_EDGE,
-            .intConfig.callback = OnCallInt
-    };
-
     GPIO_Init(gpioCallInt);
-    GPIO_Init(gpioCallState);
+    GPIO_Init(gpioCallLed);
 }

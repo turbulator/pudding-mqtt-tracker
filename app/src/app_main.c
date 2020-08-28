@@ -24,28 +24,22 @@
 #include "api_hal_watchdog.h"
 
 #include "call.h"
+#include "main_task.h"
 #include "pm_task.h"
 #include "adc_task.h"
 #include "gps_task.h"
 #include "mqtt_task.h"
-
-#define MAIN_TASK_STACK_SIZE    (2048 * 4)
-#define MAIN_TASK_PRIORITY      0
-#define MAIN_TASK_NAME          "Main Task"
-
-#define PDP_CONTEXT_APN "internet.mts.ru"
-#define PDP_CONTEXT_USERNAME "mts"
-#define PDP_CONTEXT_PASSWD "mts"
+#include "secret.h"
 
 
-static HANDLE mainTaskHandle = NULL;
+HANDLE mainTaskHandle = NULL;
 
 
-    GPIO_config_t stateLed = {
-        .mode         = GPIO_MODE_OUTPUT,
-        .pin          = GPIO_PIN28,
-        .defaultLevel = GPIO_LEVEL_HIGH
-    };
+GPIO_config_t stateLed = {
+    .mode         = GPIO_MODE_OUTPUT,
+    .pin          = GPIO_PIN28,
+    .defaultLevel = GPIO_LEVEL_HIGH
+};
 
 
 bool AttachActivate()
@@ -162,7 +156,7 @@ void app_MainTask(void *pData)
     
     GPIO_Init(stateLed);
 
-    // Init call button
+    // Init call button and led
     CallInit();
 
     // Create PM task

@@ -75,7 +75,6 @@ static void AdcTask(void* pData) {
     while(1){
         UpdateBattery();
         UpdateLiion();
-        CallProcess();
         OS_Sleep(200);
     }
 }
