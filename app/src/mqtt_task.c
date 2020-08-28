@@ -1,5 +1,6 @@
 #include <string.h>
 #include <stdio.h>
+#include <math.h>
 
 #include <api_os.h>
 #include <api_info.h>
@@ -18,6 +19,10 @@
 #include "mqtt_task.h"
 #include "adc_task.h"
 #include "secret.h"
+
+
+#define M_PI_180 0.017453293
+#define LENGTH_1_DEGREE 1.11E5
 
 
 static HANDLE mqttTaskHandle = NULL;
@@ -260,45 +265,55 @@ void OnPublishTracker(void* arg, MQTT_Error_t err) {
 void MqttPublishTracker(void) {
     Trace(1, "MqttPublishTracker");
 
+    static double latitude, longitude, angle; 
+    double latitude_rt, longitude_rt, delta_latitude, delta_longitude, delta, angle_rt;
+
     GPS_Info_t* gpsInfo = Gps_GetInfo();
     uint8_t isFixed = gpsInfo->gsa[0].fix_type > gpsInfo->gsa[1].fix_type ? gpsInfo->gsa[0].fix_type : gpsInfo->gsa[1].fix_type;
 
     if(isFixed == 2 || isFixed == 3) { /* We have 2D or 3D fix */ 
 
-            char* isFixedStr;            
-            if(isFixed == 2)
-                isFixedStr = "2D fix";
-            else if(isFixed == 3)
-            {
-                if(gpsInfo->gga.fix_quality == 1)
-                    isFixedStr = "3D fix";
-                else if(gpsInfo->gga.fix_quality == 2)
-                    isFixedStr = "3D/DGPS fix";
+#ifdef DEBUG
+        char* isFixedStr;            
+        if(isFixed == 2)
+            isFixedStr = "2D fix";
+        else if(isFixed == 3)
+        {
+            if(gpsInfo->gga.fix_quality == 1)
+                isFixedStr = "3D fix";
+            else if(gpsInfo->gga.fix_quality == 2)
+                isFixedStr = "3D/DGPS fix";
+        }
+        else
+            isFixedStr = "no fix";
+#endif
+
+        latitude_rt = minmea_tocoord(&gpsInfo->rmc.latitude);
+        longitude_rt = minmea_tocoord(&gpsInfo->rmc.longitude);
+
+        delta_latitude = LENGTH_1_DEGREE * (latitude_rt - latitude);
+        delta_longitude = LENGTH_1_DEGREE * cos(M_PI_180 * latitude) * (longitude_rt - longitude);
+
+        delta = sqrt(pow(delta_latitude, 2.0) + pow(delta_longitude, 2.0));
+        
+        if (delta > 200) {
+            latitude = latitude_rt;
+            longitude = longitude_rt;
+            snprintf(mqttBuffer, sizeof(mqttBuffer), "{\"longitude\": %f,\"latitude\": %f,\"gps_accuracy\": %.f,\"battery_level\": %.02f}", 
+                                                                longitude, latitude, minmea_tofloat(&gpsInfo->gga.hdop) * 25, GetLiionLevel());
+
+
+            MQTT_Error_t err = MQTT_Publish(mqttClient, mqttTrackerTopic, mqttBuffer, strlen(mqttBuffer), 1, 1, 1, OnPublishTracker, NULL);
+
+            /*snprintf(mqttBuffer,sizeof(mqttBuffer),"GPS fix mode:%d, GLONASS fix mode:%d, hdop:%f, satellites tracked:%d, gps sates total:%d, is fixed:%s, coordinate:WGS84, Latitude:%f, Longitude:%f, unit:degree, altitude:%f",gpsInfo->gsa[0].fix_type, gpsInfo->gsa[1].fix_type,
+                                                                    minmea_tofloat(&gpsInfo->gga.hdop), gpsInfo->gga.satellites_tracked, gpsInfo->gsv[0].total_sats, isFixedStr, latitude,longitude, minmea_tofloat(&gpsInfo->gga.altitude));
+        
+            err = MQTT_Publish(mqttClient, mqttLocationTopic, mqttBuffer, strlen(mqttBuffer), 1, 2, 0, OnPublishTracker, NULL);*/
+
+            if(err != MQTT_ERROR_NONE) {
+                Trace(1,"MQTT publish tracker error, error code: %d", err);
             }
-            else
-                isFixedStr = "no fix";
-
-
-        //convert unit ddmm.mmmm to degree(°) 
-        int temp = (int)(gpsInfo->rmc.latitude.value / gpsInfo->rmc.latitude.scale / 100);
-        double latitude = temp + (double)(gpsInfo->rmc.latitude.value - temp * gpsInfo->rmc.latitude.scale * 100) / gpsInfo->rmc.latitude.scale / 60.0;
-        temp = (int)(gpsInfo->rmc.longitude.value / gpsInfo->rmc.longitude.scale / 100);
-        double longitude = temp + (double)(gpsInfo->rmc.longitude.value - temp * gpsInfo->rmc.longitude.scale * 100) / gpsInfo->rmc.longitude.scale / 60.0;
-
-        snprintf(mqttBuffer, sizeof(mqttBuffer), "{\"longitude\": %f,\"latitude\": %f,\"gps_accuracy\": %.f,\"battery_level\": %.02f}", 
-                                                            longitude, latitude, minmea_tofloat(&gpsInfo->gga.hdop) * 25, GetLiionLevel());
-
-
-        MQTT_Error_t err = MQTT_Publish(mqttClient, mqttTrackerTopic, mqttBuffer, strlen(mqttBuffer), 1, 1, 1, OnPublishTracker, NULL);
-
-
-        /*snprintf(mqttBuffer,sizeof(mqttBuffer),"GPS fix mode:%d, GLONASS fix mode:%d, hdop:%f, satellites tracked:%d, gps sates total:%d, is fixed:%s, coordinate:WGS84, Latitude:%f, Longitude:%f, unit:degree, altitude:%f",gpsInfo->gsa[0].fix_type, gpsInfo->gsa[1].fix_type,
-                                                                 minmea_tofloat(&gpsInfo->gga.hdop), gpsInfo->gga.satellites_tracked, gpsInfo->gsv[0].total_sats, isFixedStr, latitude,longitude, minmea_tofloat(&gpsInfo->gga.altitude));
-       
-        err = MQTT_Publish(mqttClient, mqttLocationTopic, mqttBuffer, strlen(mqttBuffer), 1, 2, 0, OnPublishTracker, NULL);*/
-
-        if(err != MQTT_ERROR_NONE)
-            Trace(1,"MQTT publish tracker error, error code: %d", err);
+        }
     }
 }
 
