@@ -243,7 +243,9 @@ void MqttPublishSpeed(void) {
 void OnPublishTracker(void* arg, MQTT_Error_t err) {
     if(err == MQTT_ERROR_NONE) {
         Trace(1,"MQTT publish tracker success");
-        mqttStatus = MQTT_STATUS_LOCATION_PUBLISHED;
+        if (mqttStatus == MQTT_STATUS_ONLINE) {
+            mqttStatus = MQTT_STATUS_LOCATION_PUBLISHED;
+        }
     } else {
         Trace(1,"MQTT publish tracker error, error code: %d", err);
     }
