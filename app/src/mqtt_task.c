@@ -401,7 +401,7 @@ void MqttTask(void *pData) {
                 break;
 
              case MQTT_STATUS_CONNECTING:
-                Trace(1,"MQTT connecting...");
+                Trace(1,"MQTT is connecting...");
                 break;
 
             case MQTT_STATUS_CONNECTED:
@@ -410,7 +410,7 @@ void MqttTask(void *pData) {
                 break;
 
             case MQTT_STATUS_PUBLISHING_ONLINE:
-                Trace(1,"MQTT going online...");
+                Trace(1,"MQTT is going online...");
                 break;
 
             case MQTT_STATUS_ONLINE:
