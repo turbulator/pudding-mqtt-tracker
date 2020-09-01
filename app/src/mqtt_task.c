@@ -165,7 +165,7 @@ void MqttPublishGsm(int gsm_level) {
 
     snprintf(mqttBuffer, sizeof(mqttBuffer), "%d", gsm_level);
 
-    MQTT_Error_t err = MQTT_Publish(mqttClient, mqttGsmTopic, mqttPayload, strlen(mqttPayload), 1, 2, 1, OnPublishGsm, NULL);
+    MQTT_Error_t err = MQTT_Publish(mqttClient, mqttGsmTopic, mqttBuffer, strlen(mqttBuffer), 1, 2, 1, OnPublishGsm, NULL);
 
     if(err != MQTT_ERROR_NONE)
         Trace(1,"MQTT publish GSM error, error code: %d", err);
