@@ -27,6 +27,10 @@ HANDLE semMqttStart = NULL;
 MQTT_Connect_Info_t ci;
 MQTT_Client_t *mqttClient = NULL;
 
+const char *ca_crt = CA_CRT;
+const char *client_crt = CLIENT_CRT;
+const char *client_key = CLIENT_KEY;
+
 char imei[16] = "";
 char mqttTrackerTopic[64] = "";
 char mqttStateTopic[64] = "";
