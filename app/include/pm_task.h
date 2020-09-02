@@ -11,9 +11,14 @@
 
 typedef enum {
     PM_STATE_STANDBY = 0,
-    PM_STATE_ACTIVE,
-    PM_STATE_MAX
+    PM_STATE_TO_IGN_ON,
+    PM_STATE_IGN_ON,
+    PM_STATE_TO_IGN_OFF,
+    PM_STATE_IGN_OFF
 } PM_State_t;
+
+
+void OnIgnInt(GPIO_INT_callback_param_t* param);
 
 
 extern bool PmGetIngState(void);

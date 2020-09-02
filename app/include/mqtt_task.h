@@ -13,15 +13,19 @@
 #define MQTT_BATTERY_TOPIC_FORMAT  "vehicle/%s/battery"
 #define MQTT_LIION_TOPIC_FORMAT    "vehicle/%s/liion"
 #define MQTT_SPEED_TOPIC_FORMAT    "vehicle/%s/speed"
+#define MQTT_IGN_TOPIC_FORMAT      "vehicle/%s/ignition"
 
 #define MQTT_PAYLOAD_STATE_ONLINE  "online"
 #define MQTT_PAYLOAD_STATE_OFFLINE "offline"
+#define MQTT_PAYLOAD_ON            "ON"
+#define MQTT_PAYLOAD_OFF           "OFF"
 
 
 typedef enum {
     MQTT_STATUS_DISCONNECTED = 0,
     MQTT_STATUS_CONNECTING,
     MQTT_STATUS_CONNECTED,
+    MQTT_STATUS_PUBLISHING_ONLINE,
     MQTT_STATUS_ONLINE,
     MQTT_STATUS_LOCATION_PUBLISHED,
     MQTT_STATUS_OFFLINE,
@@ -31,7 +35,8 @@ typedef enum {
 
 extern HANDLE semMqttStart;
 
-void MqttPublishState(char *mqttStatePayload);
+void MqttPublishState(char *mqttPayload);
+void MqttPublishIgnPayload(char *mqttPayload);
 MQTT_Status_t getMqttState(void);
 void MqttTaskInit(void);
 

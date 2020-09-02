@@ -13,12 +13,14 @@ static PM_State_t state = PM_STATE_STANDBY;
 static int shutdownCounter = PM_SHUTDOWN_COUNTER_MAX;
 
 static GPIO_config_t gpioIgn = {
-    .mode               = GPIO_MODE_INPUT,
+    .mode               = GPIO_MODE_INPUT_INT,
     .pin                = GPIO_PIN2,
     .defaultLevel       = GPIO_LEVEL_HIGH,
-    .intConfig.debounce = 0,
-    .intConfig.type     = GPIO_INT_TYPE_MAX,
-    .intConfig.callback = NULL
+    .intConfig = {
+        .debounce       = 100,
+        .type           = GPIO_INT_TYPE_RISING_FALLING_EDGE,
+        .callback       = OnIgnInt
+    }
 };
 
 static GPIO_config_t gpioPower = {
@@ -27,8 +29,22 @@ static GPIO_config_t gpioPower = {
     .defaultLevel       = GPIO_LEVEL_HIGH
 };
 
+
 bool PmGetIngState(void) {
     return ign == GPIO_LEVEL_LOW ? true : false;
+}
+
+
+void OnIgnInt(GPIO_INT_callback_param_t* param) {
+    Trace(1,"PM OnIgnInt");
+
+    // Read GPIO state
+    GPIO_GetLevel(gpioIgn, &ign);
+
+    if (ign == GPIO_LEVEL_LOW)
+        state = PM_STATE_TO_IGN_ON;
+    else
+        state = PM_STATE_TO_IGN_OFF;
 }
 
 
@@ -57,8 +73,7 @@ void UpdateIgn(void) {
         case PM_STATE_STANDBY:
             if (ign == GPIO_LEVEL_LOW) {
                 // Once we've got IGN we should go to ON state
-                Trace(1,"PM Active mode");
-                state = PM_STATE_ACTIVE;
+                state = PM_STATE_TO_IGN_ON;
             } else if (getMqttState() == MQTT_STATUS_LOCATION_PUBLISHED) {
                 // We are in STANDBY state and we've already published own lacation
                 // Where are no reason to be active - just do shutdown
@@ -66,10 +81,22 @@ void UpdateIgn(void) {
             }
             break;
 
-        case PM_STATE_ACTIVE:
+        case PM_STATE_TO_IGN_ON:
+            Trace(1,"PM ign on");
+            MqttPublishIgnPayload(MQTT_PAYLOAD_ON);
+            state = PM_STATE_IGN_ON;
             break;
 
-        defaut:
+            break;
+
+        case PM_STATE_TO_IGN_OFF:
+            Trace(1,"PM ign off");
+            MqttPublishIgnPayload(MQTT_PAYLOAD_OFF);
+            state = PM_STATE_IGN_OFF;
+            break;
+
+        case PM_STATE_IGN_ON:
+        case PM_STATE_IGN_OFF:
             break;
     }
 
@@ -80,7 +107,7 @@ void UpdateIgn(void) {
     }
 
     if (shutdownCounter % 10 == 0)
-        Trace(1,"shutdownCounter = %d", shutdownCounter);
+        Trace(1, "shutdownCounter = %d", shutdownCounter);
 
 }
 

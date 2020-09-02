@@ -33,6 +33,7 @@ char mqttStateTopic[64] = "";
 char mqttBatteryTopic[64] = "";
 char mqttLiionTopic[64] = "";
 char mqttSpeedTopic[64] = "";
+char mqttIgnTopic[64] = "";
 char mqttBuffer[1024] = "";
 
 MQTT_Status_t mqttStatus = MQTT_STATUS_DISCONNECTED;
@@ -74,6 +75,7 @@ void OnPublishStateOnline(void* arg, MQTT_Error_t err) {
         mqttStatus = MQTT_STATUS_ONLINE;
     } else {
         Trace(1,"MQTT publish state online error, error code: %d", err);
+        mqttStatus = MQTT_STATUS_CONNECTED;
     }
 
     WatchDog_KeepAlive();
@@ -86,6 +88,8 @@ void MqttPublishStateOnline(void) {
 
     if(err != MQTT_ERROR_NONE)
         Trace(1,"MQTT publish state online error, error code: %d", err);
+
+    mqttStatus = MQTT_STATUS_PUBLISHING_ONLINE;
 }
 
 void OnPublishStateOffline(void* arg, MQTT_Error_t err) {
@@ -106,6 +110,39 @@ void MqttPublishStateOffline(void) {
 
     if(err != MQTT_ERROR_NONE)
         Trace(1,"MQTT publish state offline error, error code: %d", err);
+}
+
+
+void OnPublishIgn(void *arg, MQTT_Error_t err) {
+    if(err == MQTT_ERROR_NONE) {
+        Trace(1,"MQTT publish IGN success");
+    } else {
+        Trace(1,"MQTT publish IGN error, error code: %d", err);
+    }
+
+    WatchDog_KeepAlive();
+}
+
+void MqttPublishIgnPayload(char *mqttPayload) {
+    Trace(1, "MqttPublishIgnPayload");
+
+    if (mqttStatus < MQTT_STATUS_CONNECTED) 
+        return;
+
+    MQTT_Error_t err = MQTT_Publish(mqttClient, mqttIgnTopic, mqttPayload, strlen(mqttPayload), 1, 2, 1, OnPublishIgn, NULL);
+
+    if(err != MQTT_ERROR_NONE)
+        Trace(1,"MQTT publish IGN error, error code: %d", err);
+}
+
+void MqttPublishIgn(void) {
+    Trace(1, "MqttPublishIgn");
+
+    if (PmGetIngState() == true) {
+        MqttPublishIgnPayload(MQTT_PAYLOAD_ON);
+    } else {
+        MqttPublishIgnPayload(MQTT_PAYLOAD_OFF);
+    }
 }
 
 
@@ -268,6 +305,7 @@ void MqttInit(void) {
     snprintf(mqttBatteryTopic, sizeof(mqttBatteryTopic), MQTT_BATTERY_TOPIC_FORMAT, imei);
     snprintf(mqttLiionTopic, sizeof(mqttLiionTopic), MQTT_LIION_TOPIC_FORMAT, imei);
     snprintf(mqttSpeedTopic, sizeof(mqttSpeedTopic), MQTT_SPEED_TOPIC_FORMAT, imei);
+    snprintf(mqttIgnTopic, sizeof(mqttIgnTopic), MQTT_IGN_TOPIC_FORMAT, imei);
 
     mqttClient = MQTT_ClientNew();
     memset(&ci, 0, sizeof(MQTT_Connect_Info_t));
@@ -330,6 +368,11 @@ void MqttTask(void *pData) {
 
             case MQTT_STATUS_CONNECTED:
                 MqttPublishStateOnline();
+                MqttPublishIgn();
+                break;
+
+            case MQTT_STATUS_PUBLISHING_ONLINE:
+                Trace(1,"MQTT going online...");
                 break;
 
             case MQTT_STATUS_ONLINE:
