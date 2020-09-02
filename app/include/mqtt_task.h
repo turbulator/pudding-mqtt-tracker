@@ -36,7 +36,8 @@ typedef enum {
 
 extern HANDLE semMqttStart;
 
-void MqttPublishState(char *mqttPayload);
+
+void MqttPublishStateOffline(void);
 void MqttPublishIgnPayload(char *mqttPayload);
 void MqttPublishGsm(int gsm_level);
 MQTT_Status_t getMqttState(void);

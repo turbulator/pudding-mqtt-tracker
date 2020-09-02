@@ -26,6 +26,7 @@
 #include "call.h"
 #include "pm_task.h"
 #include "adc_task.h"
+#include "gps_task.h"
 #include "mqtt_task.h"
 
 #define MAIN_TASK_STACK_SIZE    (2048 * 4)
